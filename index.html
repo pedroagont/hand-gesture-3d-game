@@ -136,7 +136,6 @@
     <!-- <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script> -->
     <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
 
-
     <script>
       // Game variables
       let scene,
@@ -196,7 +195,7 @@
         scene.add(directionalLight);
 
         // Create player
-        const playerGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const playerGeometry = new THREE.SphereGeometry(2, 32, 32);
         const playerMaterial = new THREE.MeshLambertMaterial({
           color: 0x00ff00,
         });
@@ -232,7 +231,7 @@
         orbs = [];
 
         for (let i = 0; i < 10; i++) {
-          const orbGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+          const orbGeometry = new THREE.SphereGeometry(1, 16, 16);
           const colorName =
             colorNames[Math.floor(Math.random() * colorNames.length)];
           const orbMaterial = new THREE.MeshLambertMaterial({
@@ -262,26 +261,36 @@
 
       // Setup camera and ML5 handpose
       async function setupCamera() {
-        video = document.getElementById("video");
+        const video = document.getElementById("video");
+
+        // Important for iOS Safari: prevent fullscreen takeover
+        video.setAttribute("playsinline", "");
+        video.setAttribute("autoplay", "");
+        video.setAttribute("muted", ""); // Required for autoplay without user gesture
 
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 640, height: 480 },
+            video: {
+              facingMode: "user", // front camera
+              width: { ideal: 640 },
+              height: { ideal: 480 },
+            },
+            audio: false,
           });
+
           video.srcObject = stream;
 
-          // Initialize handpose model
-          video.onloadedmetadata = () => {
-            
-                // Initialize handpose model
-                handpose = ml5.handpose(video, () => {
-                    console.log('Handpose model loaded');
-                    handpose.on('predict', (results) => {
-                        predictions = results;
-                        processHandGesture();
-                    });
-                });
+          await video.play(); // Ensure playback starts
 
+          // Initialize handpose once video is ready
+          video.onloadedmetadata = () => {
+            handpose = ml5.handpose(video, () => {
+              console.log("Handpose model loaded");
+              handpose.on("predict", (results) => {
+                predictions = results;
+                processHandGesture();
+              });
+            });
           };
         } catch (error) {
           console.error("Error accessing camera:", error);
