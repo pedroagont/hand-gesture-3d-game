@@ -280,12 +280,16 @@
 
           video.srcObject = stream;
 
+          const currentGestureElement =
+            document.getElementById("currentGesture");
+          currentGestureElement.textContent = "Model loading...";
+
           // await video.play(); // Ensure playback starts
 
           // Initialize handpose once video is ready
           video.onloadedmetadata = () => {
             handpose = ml5.handpose(video, () => {
-              console.log("Handpose model loaded");
+              currentGestureElement.textContent = "Ready!";
               handpose.on("predict", (results) => {
                 predictions = results;
                 processHandGesture();
@@ -304,16 +308,6 @@
           const hand = predictions[0];
           const landmarks = hand.landmarks;
 
-          // console.log(landmarks);
-
-          // Get key landmark positions
-          const wrist = landmarks[0];
-          const thumbTip = landmarks[4];
-          const indexTip = landmarks[8];
-          const middleTip = landmarks[12];
-          const ringTip = landmarks[16];
-          const pinkyTip = landmarks[20];
-
           // Detect gestures based on finger positions
           const gesture = detectGesture(landmarks);
           currentGesture = gesture;
@@ -324,7 +318,7 @@
         }
       }
 
-      // Simple gesture detection
+      // Gesture detection
       function detectGesture(landmarks) {
         const wrist = landmarks[0];
         const indexTip = landmarks[8];
@@ -332,23 +326,45 @@
         const middleTip = landmarks[12];
         const thumbTip = landmarks[4];
 
-        // Check if index finger is pointing up
-        if (indexTip[1] < indexPip[1] - 20 && middleTip[1] > indexPip[1]) {
+        // Helper: distance between two points
+        const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+        // Estimate hand size to scale thresholds
+        const handSize = dist(landmarks[0], landmarks[9]); // wrist to middle knuckle
+
+        // ---- Point Up ----
+        if (
+          indexTip[1] < indexPip[1] - handSize * 0.2 &&
+          middleTip[1] > indexPip[1]
+        ) {
           return "point_up";
         }
 
-        // Check if hand is open (all fingers extended)
+        // ---- Open Palm ----
         const fingersUp = [
           landmarks[4][1] < landmarks[3][1], // thumb
           landmarks[8][1] < landmarks[6][1], // index
           landmarks[12][1] < landmarks[10][1], // middle
           landmarks[16][1] < landmarks[14][1], // ring
           landmarks[20][1] < landmarks[18][1], // pinky
-        ].filter((f) => f).length;
+        ].filter(Boolean).length;
 
         if (fingersUp >= 4) {
           return "open_palm";
         }
+
+        // // ---- Point Left / Right ----
+        // const horizontalDiff = indexTip[0] - wrist[0];
+        // const verticalDiff = Math.abs(indexTip[1] - wrist[1]);
+
+        // // Ensure finger is mostly horizontal, not up/down
+        // if (
+        //   verticalDiff < handSize * 0.3 &&
+        //   indexTip[1] < indexPip[1] - handSize * 0.1
+        // ) {
+        //   if (horizontalDiff < -handSize * 0.3) return "point_left";
+        //   if (horizontalDiff > handSize * 0.3) return "point_right";
+        // }
 
         // Check pointing left or right
         if (indexTip[1] < indexPip[1] - 10) {
@@ -392,7 +408,7 @@
           const orb = orbs[i];
           const distance = player.position.distanceTo(orb.position);
 
-          if (distance < 0.8) {
+          if (distance < 0.6) {
             // Collision detected
             scene.remove(orb);
             orbs.splice(i, 1);
