@@ -195,7 +195,7 @@
         scene.add(directionalLight);
 
         // Create player
-        const playerGeometry = new THREE.SphereGeometry(2, 32, 32);
+        const playerGeometry = new THREE.SphereGeometry(1, 32, 32);
         const playerMaterial = new THREE.MeshLambertMaterial({
           color: 0x00ff00,
         });
@@ -231,7 +231,7 @@
         orbs = [];
 
         for (let i = 0; i < 10; i++) {
-          const orbGeometry = new THREE.SphereGeometry(1, 16, 16);
+          const orbGeometry = new THREE.SphereGeometry(0.6, 16, 16);
           const colorName =
             colorNames[Math.floor(Math.random() * colorNames.length)];
           const orbMaterial = new THREE.MeshLambertMaterial({
@@ -280,7 +280,7 @@
 
           video.srcObject = stream;
 
-          await video.play(); // Ensure playback starts
+          // await video.play(); // Ensure playback starts
 
           // Initialize handpose once video is ready
           video.onloadedmetadata = () => {
