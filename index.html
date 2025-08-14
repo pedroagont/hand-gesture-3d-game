@@ -408,7 +408,7 @@
           const orb = orbs[i];
           const distance = player.position.distanceTo(orb.position);
 
-          if (distance < 0.6) {
+          if (distance < 1) {
             // Collision detected
             scene.remove(orb);
             orbs.splice(i, 1);
